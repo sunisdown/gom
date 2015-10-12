@@ -110,13 +110,31 @@ func (gom *Gom) Clone(args []string) error {
 		}
 
 		srcdir := filepath.Join(vendor, "src", target)
+		if _, err := os.Stat(srcdir); err == nil {
+			error := os.Rename(srcdir, srcdir+".bak")
+			if error != nil {
+				return error
+			}
+		}
 		customCmd := strings.Split(command, " ")
 		customCmd = append(customCmd, srcdir)
 
 		fmt.Printf("fetching %s (%v)\n", gom.name, customCmd)
 		err = run(customCmd, Blue)
 		if err != nil {
+			if _, error := os.Stat(srcdir + ".bak"); error == nil {
+				error := os.Rename(srcdir, srcdir+".bak")
+				if error != nil {
+					return error
+				}
+			}
 			return err
+		}
+		if _, err := os.Stat(srcdir + ".bak"); err == nil {
+			error := os.RemoveAll(srcdir + ".bak")
+			if error != nil {
+				return error
+			}
 		}
 	} else if private, ok := gom.options["private"].(string); ok {
 		if private == "true" {
